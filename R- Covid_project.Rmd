@@ -1,5 +1,5 @@
 ---
-title: "Assessment_1_Topic_1"
+title: "R-Covid_project"
 output:
   pdf_document: default
   html_document: default
@@ -10,11 +10,11 @@ date: "2025-01-24"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-#Part A: Exploratory Data Analysis and Predictive Data Analysis Using R
+#Exploratory and Predictive Data Analysis Using R
 
 ##Topic 1 COVID-19
 
-###Task 1: Data wrangling and integration
+###Part 1: Data wrangling and integration
 
 Loading relevant r packages:
 ```{r}
@@ -520,51 +520,37 @@ ggplot(data = negative_val_loop, aes(x = date, y = new_cases, group = location, 
 As you can see from the plot there is a value that does not look quite right in the Iran data where the new cases go from thousands to 0 to thousands in one day. Lets examine it closer.
 
 ```{r}
-#filter Iran data by rows with 0 new_cases.
-head(filter(negative_val_loop, new_cases == 0 & location == "Iran"))
+#filter data by rows with 0 new_cases and new_deaths when total cases are above 100.
+negative_val_loop %>%
+filter( new_cases == 0 & new_deaths == 0 & total_cases > 100)
 ```
-At the end of this table we can find a row with high total cases and total deaths, this is our outlier row. Since we have no way of finding out the correct case data from this date, we will omit the row.
+As we can see there are 40 dates spread across 4 countries where there are both 0 new cases and 0 new deaths while there are 1000s of cases, this is highly unlikely to be accurate data so there are a couple of options in how to deal with this anomaly. First we could search up statistics on the actual case numbers on a government website, or we could omit the rows as only a few dates removed would be unlikely to cause much of a change in such a large data set. 
 
 ```{r}
-#Delete outlier data row
-negative_val_loop <- negative_val_loop[-c(477), ]
+#Delete outlier data rows
+negative_val_loop_outliers_removed <- negative_val_loop %>%
+  filter(!(new_cases == 0 & new_deaths == 0 & total_cases > 100))
 ```
 
 We will now perform the same check for new_deaths.
 
 ```{r}
 #Plot a line graph using the clean covid data examining new cases over time
-ggplot(data = negative_val_loop, aes(x = date, y = new_deaths, group = location, color = location))+
+ggplot(data = negative_val_loop_outliers_removed, aes(x = date, y = new_cases, group = location, color = location))+
   geom_line(linewidth = 0.5)+
   #Split plot by country, give each plot its own scale
   facet_grid(rows = vars(location), scales = "free")
 ```
-We can see Iran has another row with outlier data. Lets examine it closer.
-
-```{r}
-#filter Iran data by rows with 0 new_deaths.
-tail(filter(negative_val_loop, new_deaths == 0 & location == "Iran"))
-```
-At the end of this table we can find a row with high total cases and total deaths, this is our outlier row. Since we have no way of finding out the correct case data from this date, we will omit the row.
-
-```{r}
-#Delete outlier row
-negative_val_loop <- negative_val_loop[-c(555), ]
-```
-
-
 Now we can assign our clean data to a new variable name.
 
 ```{r}
 #Reassign cleaned data to a new variable
-covid_data_clean <- negative_val_loop
-covid_data_clean
+covid_data_clean <- negative_val_loop_outliers_removed
 ```
-
 
 Finally we have our cleaned and joined dataset ready for analysis.
 
-###Task 2: Data visualisation and analysis
+###Part 2: Data visualisation and analysis
 
 First we will create a plot to examine the trend of new cases in each country.
 
@@ -704,7 +690,7 @@ Now lets create a new column in our data set which compares the countries GDP an
 covid_data_clean <- covid_data_clean %>%
   mutate(
     GDP_status = ifelse(
-      mean_gdp, #mean of GDP_per_capita
+      gdp_per_capita >= mean_gdp, #mean of GDP_per_capita
       "Higher", 
       "Lower"
     )
@@ -726,42 +712,47 @@ covid_data_clean <- covid_data_clean%>%
   mutate(
    daily_death_rate = (new_deaths / population) 
   )
-head(covid_data_clean)
+covid_data_clean
 ```
 Now we can create a plot to represent the relationship between the daily infected case rate within different GDP groups.
 
 ```{r}
 #Generate plot of the relationship between the daily infected case rate within different GDP groups
-ggplot(data = covid_data_clean, aes(x = date, y = daily_infected_case_rate, group = GDP_status, color = GDP_status))+
-  geom_line()+
-  #Scale x-axis by month
-  scale_x_date(date_breaks = "1 month", date_labels = "%b-%y")+
-  #Add title and legend description
-  labs(title = "Daily Infected Case Rate by GDP Status", colour = "GDP Status")+
-  #Add y-axis label
-  ylab("Daily Infected Case Rate")+
-  #Add x-axis label
-  xlab("Date")
-  
-  
+covid_data_clean %>%
+  #aggregate data
+  group_by(date, GDP_status) %>%
+  #Calculate mean_infected_rate value for y-axis
+  summarise(mean_infected_rate = mean(daily_infected_case_rate, na.rm = TRUE)) %>%
+  ggplot(aes(x = date, y = mean_infected_rate, color = GDP_status)) +
+  geom_line(linewidth = 0.5) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b-%y") +
+  labs(title = "Average Daily Infection Rate by GDP Group",
+       y = "Mean Daily Infection Rate",
+       x = "Date",
+       colour = "GDP Status")
+
 ```
+
 As we can see from the graph there looks like there is a higher daily infected case rate for countries with a low GDP status.
 
 Lets plot the relationship between the daily death rate within different GDP groups.
 ```{r}
 #Generate plot of the relationship between the daily death rate within different GDP groups
-ggplot(data = covid_data_clean, aes(x = date, y = daily_death_rate, group = GDP_status, color = GDP_status))+
-  geom_line()+
-  #Scale x-axis by month
-  scale_x_date(date_breaks = "1 month", date_labels = "%b-%y")+
-  #Add title and legend description
-  labs(title = "Daily Death Rate by GDP Status", colour = "GDP Status")+
-  #Add y-axis label
-  ylab("Daily death Rate")+
-  #Add x-axis label
-  xlab("Date")
-  
+covid_data_clean %>%
+  #aggregate data
+  group_by(date, GDP_status) %>%
+  #Calculate mean_death_rate value for y-axis
+  summarise(mean_death_rate = mean(daily_death_rate, na.rm = TRUE)) %>%
+  ggplot(aes(x = date, y = mean_death_rate, color = GDP_status)) +
+  geom_line(linewidth = 0.5) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b-%y") +
+  labs(title = "Average Daily Death Rate by GDP Group",
+       y = "Mean Daily Death Rate",
+       x = "Date",
+       colour = "GDP Status")
+
 ```
+
 Looking at the graph we can see that countries with lower GDP per capita have a higher daily death rate than countries with a high GDP per capita however this difference is not as pronounced as the difference between high and low GDP per capita when looking at the daily infected case rate. These differences between higher and lower GDP per capita are likely due to better healthcare facilities and practices that are present in countries with a higher GDP status compared to countries with a lower GDP status. Better healthcare facilities allow for sick patients to recover faster. Better healthcare practices and education of the public on matters such as hand hygiene and social distancing allow the population to stay safe from COVID and reduce transmission rate.
 
 ###Task 3: Predictive data analysis
@@ -802,11 +793,31 @@ date_range <- data.frame(date = seq(min(covid_aus_filter$date), max(covid_aus_fi
 date_range$predicted_cases <- predict(model_1, newdata = data.frame(date = as.numeric(date_range$date)))
 
 
-#Plotting the model and the data together
-ggplot(covid_aus_filter, aes(date, new_cases)) +
-  geom_point() +
-  geom_line(data = date_range, aes(x = date, y = predicted_cases), color = "blue") + # Use geom_line with predictions
-  scale_x_date()
+ggplot(covid_aus_filter, aes(x = date, y = new_cases)) +
+  geom_line(color = "black", size = 0.8, alpha = 0.8) +
+  
+  # Model predictions
+  geom_line(
+    data = date_range,
+    aes(x = date, y = predicted_cases),
+    color = "blue",
+    size = 1.1
+  ) +
+  
+  scale_x_date(date_breaks = "1 month", date_labels = "%b-%y") +
+  
+  labs(
+    title = "Observed vs Predicted COVID-19 Daily Cases (Australia)",
+    x = "Date",
+    y = "Daily New Cases",
+    caption = "Black = observed data, Blue = model prediction"
+  ) +
+  
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 ```
 
 Lets perform K-fold Cross-Validation on our model to evaluate our predictions.
@@ -819,7 +830,7 @@ model_2 <- train(new_cases ~ poly(as.numeric(date), 5, raw = TRUE), data = covid
 
 print(model_2)
 ```
-Using 5 fold CV we improved the R2 value of the model from 0.11 to 0.14 however this value is still too low to be considered a good model. An effective model usually has an R2 value of higher than 0.7.
+Using 5 fold CV we improved the R2 value of the model from 0.11 to 0.12 however this value is still too low to be considered a good model. An effective model usually has an R2 value of higher than 0.7.
 
 Lets use both our models to predict the next week of new cases in Australia.
 
