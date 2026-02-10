@@ -3,7 +3,7 @@ title: "R-Covid_project"
 output:
   pdf_document: default
   html_document: default
-date: "2025-01-24"
+date: "2025-06-24"
 ---
 
 ```{r setup, include=FALSE}
@@ -12,7 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 #Exploratory and Predictive Data Analysis Using R
 
-##Topic 1 COVID-19
 
 ###Part 1: Data wrangling and integration
 
@@ -455,10 +454,6 @@ for (i in 2:nrow(negative_val_loop)) {
 
 ```
 
-```{r}
-#Examine case/ death columns for negative values
-filter(negative_val_loop[c(186,187,188,189,190,191),])
-```
 Now the the total_cases column is incrementing correctly we will now correct the values in the total_deaths column.
 
 
@@ -505,7 +500,11 @@ Lets check our data again for any negative values.
 
 ```{r}
 #Examine case/ death columns for negative values
-filter(negative_val_loop, new_deaths <0 | new_cases <0)
+filter(negative_val_loop, total_cases < 0 |
+         total_deaths < 0 |
+         new_cases < 0 |
+         new_deaths <0
+       )
 ```
 Lets produce a quick plot as a final check to see if there are any irregularties in our data.
 
@@ -517,14 +516,14 @@ ggplot(data = negative_val_loop, aes(x = date, y = new_cases, group = location, 
   facet_grid(rows = vars(location), scales = "free")
   
 ```
-As you can see from the plot there is a value that does not look quite right in the Iran data where the new cases go from thousands to 0 to thousands in one day. Lets examine it closer.
+As shown in the plot, there is a value in the Iran data that appears inconsistent: new cases drop from several thousand to zero and then return to several thousand the very next day. This pattern is unlikely to reflect real transmission dynamics, so it warrants closer examination to determine whether it represents a reporting delay, a data entry error, or missing information.
 
 ```{r}
 #filter data by rows with 0 new_cases and new_deaths when total cases are above 100.
 negative_val_loop %>%
 filter( new_cases == 0 & new_deaths == 0 & total_cases > 100)
 ```
-As we can see there are 40 dates spread across 4 countries where there are both 0 new cases and 0 new deaths while there are 1000s of cases, this is highly unlikely to be accurate data so there are a couple of options in how to deal with this anomaly. First we could search up statistics on the actual case numbers on a government website, or we could omit the rows as only a few dates removed would be unlikely to cause much of a change in such a large data set. 
+From the plot above, we can see that there are 40 dates across four countries where both new cases and new deaths are recorded as zero, despite surrounding days showing thousands of cases. This pattern is highly unlikely to reflect real epidemiological conditions and instead suggests missing or incomplete reporting. There are a couple of reasonable approaches to address this anomaly. One option is to verify the correct figures using official government or public‑health sources. Alternatively, we could omit these rows from the dataset; given the size of the full dataset, removing a small number of clearly inaccurate entries is unlikely to materially affect the overall analysis.
 
 ```{r}
 #Delete outlier data rows
@@ -577,7 +576,7 @@ aes(xintercept = covid_data_clean[1,11]))+
   ylab("New Cases")
   
 ```
-When examining the data in the plot above we can see that each of the countries have a peak of new cases around late March/ early April which begins to taper off after the peak. Marked by the black vertical line we can see the date the each country placed their first lockdowns and we can see for most of the countries within a month it caused new cases to decrease with some decreases being sharper than others.
+When examining the plot above, we can see that each country experiences a clear peak in new daily cases around late March to early April, followed by a gradual decline. The black vertical line marks the date each country implemented its first lockdown. For most countries, case numbers begin to fall within roughly a month of these initial restrictions, although the rate of decline varies. Some countries show a sharp and immediate drop, while others display a more gradual reduction, reflecting differences in timing, enforcement, and public adherence to the measures.
 
 ```{r}
 #Plot a line graph using the clean covid data examining new cases over time
@@ -595,7 +594,7 @@ ggplot(data = filter(covid_data_clean, location == "Australia"), aes(x = date, y
   ylab("New Cases")
 
 ```
-In Australia we can see that there is a sharp increase in cases in mid to late March. On March 20 Australia closed its international borders and brought in social distancing laws to implement a zero-COVID suppression strategy and on March 24 lockdowns were beginning to be introduced.[1] As we can see after these measures there is a sharp decrease in the amount of new cases which falls to almost 0 daily cases until there is a spike of cases in July due to an outbreak in Victoria hotel quarantine system.[2] 
+In Australia, the data shows a sharp increase in cases during mid‑ to late‑March. On March 20, Australia closed its international borders and introduced social‑distancing laws as part of a zero‑COVID suppression strategy, followed shortly after by the rollout of lockdown measures on March 24. Following these interventions, daily case numbers declined rapidly, falling to almost zero throughout April and May. A renewed spike emerged in July, driven by an outbreak linked to Victoria’s hotel quarantine system, which marked the beginning of the country’s second wave.
 
 
 ```{r}
@@ -614,7 +613,7 @@ ggplot(data = filter(covid_data_clean, location == "France"), aes(x = date, y = 
   ylab("New Cases")
 
 ```
-In France we can see there is a similar spike in cases compared to Australia, however the amount of cases is ten times higher. France's lockdowns were implemented over a few days and the daily cases were already quite high which caused a lag between the lock down beginning and the cases dropping.[3] The spike present in mid May is likely due to the easing of restrictions allowing for schools to reopen.[4]
+In France, the data shows a spike in cases similar to Australia’s trend, although the scale is significantly larger, with case numbers reaching roughly ten times higher. France implemented its lockdown measures over several days, and because daily cases were already elevated at the time restrictions began, there was a noticeable lag before case numbers started to decline. The spike observed in mid‑May likely reflects the easing of restrictions, including the reopening of schools, which increased opportunities for transmission.
 
 
 ```{r}
@@ -633,8 +632,7 @@ ggplot(data = filter(covid_data_clean, location == "Iran"), aes(x = date, y = ne
   ylab("New Cases")
 
 ```
-In Iran we can see a spike in early March which starts to decrease after a lock down is put in place however, cases start to increase dramatically to 2000+ cases on March 25 which later peaks in early April. In Early April once the daily cases began to drop lock down restrictions were eased leading to a surge in cases between May and June.[5] 
-
+In Iran, the data shows an initial spike in cases in early March, followed by a brief decline after lockdown measures were introduced. However, daily cases rose sharply again, surpassing 2,000 on March 25 and peaking in early April. Once cases began to fall in early April, restrictions were eased, but this relaxation was followed by a renewed surge in infections between May and June. This pattern highlights how early easing of restrictions can contribute to subsequent waves of transmission.
 ```{r}
 #Plot a line graph using the clean covid data examining new cases over time
 ggplot(data = filter(covid_data_clean, location == "Italy"), aes(x = date, y = new_cases, group = location, color = location))+
@@ -651,7 +649,7 @@ ggplot(data = filter(covid_data_clean, location == "Italy"), aes(x = date, y = n
   ylab("New Cases")
 
 ```
-In Italy the first regions were locked down preventing various public areas and social venues such as pubs to be used causing outrage. With cases still increasing the Italian government ordered a nationwide lock down on March 21 by closing all non-essential industries and businesses, preventing free movement and closing down public parks and playgrounds. As you can see on the graph these measures had a strong affect on daily case numbers causing them to plummet. Restrictions we eased on May 18 with most businesses reopening and free travel restored.[6]
+In Italy, the first regional lockdowns targeted public spaces and social venues such as bars and pubs, prompting significant public frustration. As cases continued to rise, the government escalated its response by implementing a nationwide lockdown on March 21, closing all non‑essential industries, restricting movement, and shutting public parks and playgrounds. The graph shows a clear decline in daily case numbers following these measures, indicating that the restrictions had a substantial impact on transmission. Restrictions were gradually eased on May 18, with most businesses reopening and domestic travel permitted once again.
 
 ```{r}
 #Plot a line graph using the clean covid data examining new cases over time
@@ -669,11 +667,9 @@ ggplot(data = filter(covid_data_clean, location == "Spain"), aes(x = date, y = n
   ylab("New Cases")
 
 ```
-In Spain the first lock down was ordered on March 14 with restrictions tightened on March 30 preventing any non-essential workers from leaving home.[7] Upon examining the graph we can see cases peaking around the point where the lock down restrictions were tightened with daily cases sharply decreasing after they restrictions were implemented. Lock down restrictions were later eased on June 21 however in July cases began to increase again leading to various regions of the country bringing back restrictions.[8][9]
+In Spain, the first national lockdown was introduced on March 14, with restrictions tightened further on March 30 to limit movement for all non‑essential workers. When examining the graph, we see daily cases peaking around the time these stricter measures were implemented, followed by a sharp decline as the restrictions took effect. Lockdown measures were later eased on June 21, but cases began rising again in July, prompting several regions to reintroduce targeted restrictions.
+Having reviewed the daily case trends for each country, we can now explore whether a country’s economic status influences its COVID‑19 outcomes. To begin, we calculate the mean GDP per capita across all countries in the dataset.
 
-Now that we have examined new daily cases for each country lets examine if each countries GDP has any effect on their COVID statistics.
-
-First we will calculate the mean GDP across all the countries we have data for.
 ```{r}
 #Calculate mean GDP of locations
 mean_gdp <- covid_data_clean %>%
@@ -683,7 +679,7 @@ mean_gdp
  
   
 ```
-Now lets create a new column in our data set which compares the countries GDP and compares it to the average GDP between the countries stating "higher" or "lower".
+Now we can create a new column that classifies each country based on how its GDP per capita compares to the global average. Countries with GDP values above the mean are labelled “Higher”, while those below the mean are labelled “Lower.” This grouping allows us to analyse infection and death rates across broad economic categories in a consistent and interpretable way.
 
 ```{r}
 #Assigning new column to data frame which describes if the locations GDP per capita is higher or lower than the average called GDP_status
@@ -698,7 +694,8 @@ covid_data_clean <- covid_data_clean %>%
 #Check data frame to see if new column has been added as intended
 head(covid_data_clean)
 ```
-Now lets add two columns. The first is called daily infected case rate which is new_cases divided by the population of the country. The second is called daily death rate which is new_deaths divided by the population of the country.
+Now we can add two new variables to support our analysis. The first, daily infected case rate, is calculated as new_cases divided by each country’s population. The second, daily death rate, is computed as new_deaths divided by the population. These metrics standardise case and death counts across countries of different sizes, allowing for more meaningful comparisons.
+
 
 ```{r}
 #Adding daily_infected_case_rate column
@@ -714,7 +711,7 @@ covid_data_clean <- covid_data_clean%>%
   )
 covid_data_clean
 ```
-Now we can create a plot to represent the relationship between the daily infected case rate within different GDP groups.
+Now that the data is prepared, we can visualise how infection rates differ across economic groups. The following plot illustrates the relationship between daily infected case rates and GDP status, allowing us to compare trends between higher‑ and lower‑GDP countries over time.
 
 ```{r}
 #Generate plot of the relationship between the daily infected case rate within different GDP groups
@@ -733,9 +730,9 @@ covid_data_clean %>%
 
 ```
 
-As we can see from the graph there looks like there is a higher daily infected case rate for countries with a low GDP status.
+As we can see from the graph, countries with lower GDP status tend to experience higher daily infected case rates. This suggests that economic capacity may play a role in shaping how effectively countries can limit transmission.
+To build on this, the next step is to examine whether the same pattern appears in mortality outcomes. Below, I plot the relationship between the daily death rate and GDP group to assess whether lower‑GDP countries also experience disproportionately higher fatality rates.
 
-Lets plot the relationship between the daily death rate within different GDP groups.
 ```{r}
 #Generate plot of the relationship between the daily death rate within different GDP groups
 covid_data_clean %>%
@@ -753,111 +750,7 @@ covid_data_clean %>%
 
 ```
 
-Looking at the graph we can see that countries with lower GDP per capita have a higher daily death rate than countries with a high GDP per capita however this difference is not as pronounced as the difference between high and low GDP per capita when looking at the daily infected case rate. These differences between higher and lower GDP per capita are likely due to better healthcare facilities and practices that are present in countries with a higher GDP status compared to countries with a lower GDP status. Better healthcare facilities allow for sick patients to recover faster. Better healthcare practices and education of the public on matters such as hand hygiene and social distancing allow the population to stay safe from COVID and reduce transmission rate.
-
-###Task 3: Predictive data analysis
-
-Next we will create a model to predict the number of new daily cases in Australia.
-```{r}
-#Install Caret library
-library(caret)
-#Filtering data
-covid_aus_filter <- filter(covid_data_clean, location == "Australia")
-
-#Split data into training and test data
-set.seed(100)
-training.samples <- covid_aus_filter$new_cases %>%
-  createDataPartition(p = 0.8, list = FALSE)
-train.data <- covid_aus_filter[training.samples, ]
-test.data <- covid_aus_filter[-training.samples, ]
-
-#Creating polynomial model to predict daily cases in Australia.
-model_1 <- lm(new_cases ~ poly(as.numeric(date), 5, raw = TRUE), data = train.data)
-
-#Make predictions using the test data
-predictions <- model_1 %>% predict(test.data)
-
-#view model performance
-model_1_performance = data.frame( RMSE = RMSE(predictions, test.data$new_cases),R2 = R2(predictions, test.data$new_cases))
-
-
-print(model_1_performance)
-```
-For our model we have used a polynomial of degree 5 to create it and have used a train test split of 8:2 (80% training, 20% testing). 
-As we can see with the R2 score of the model its predictive ability is not very good when we test it using a simple training test split.
-Lets see what our model looks like when plotted next to our data.
-
-```{r}
-#Create a data frame for predictions allowing for the data to be plotted
-date_range <- data.frame(date = seq(min(covid_aus_filter$date), max(covid_aus_filter$date), by = "day")) # Create a sequence of dates for prediction
-date_range$predicted_cases <- predict(model_1, newdata = data.frame(date = as.numeric(date_range$date)))
-
-
-ggplot(covid_aus_filter, aes(x = date, y = new_cases)) +
-  geom_line(color = "black", size = 0.8, alpha = 0.8) +
-  
-  # Model predictions
-  geom_line(
-    data = date_range,
-    aes(x = date, y = predicted_cases),
-    color = "blue",
-    size = 1.1
-  ) +
-  
-  scale_x_date(date_breaks = "1 month", date_labels = "%b-%y") +
-  
-  labs(
-    title = "Observed vs Predicted COVID-19 Daily Cases (Australia)",
-    x = "Date",
-    y = "Daily New Cases",
-    caption = "Black = observed data, Blue = model prediction"
-  ) +
-  
-  theme_minimal(base_size = 13) +
-  theme(
-    plot.title = element_text(face = "bold"),
-    axis.text.x = element_text(angle = 45, hjust = 1)
-  )
-```
-
-Lets perform K-fold Cross-Validation on our model to evaluate our predictions.
-```{r}
-#Specify the cross-validation method
-ctrl <- trainControl(method = "cv", number = 5)
-
-#Recreating regression model using K-fold CV to evaluate performance
-model_2 <- train(new_cases ~ poly(as.numeric(date), 5, raw = TRUE), data = covid_aus_filter, method = "lm", trControl = ctrl)
-
-print(model_2)
-```
-Using 5 fold CV we improved the R2 value of the model from 0.11 to 0.12 however this value is still too low to be considered a good model. An effective model usually has an R2 value of higher than 0.7.
-
-Lets use both our models to predict the next week of new cases in Australia.
-
-```{r}
-#Find the most recent date in our filtered data
-max(covid_aus_filter$date)
-```
-Now lets create a data frame with the next week of dates and predict new_cases for them.
-```{r}
-#Create dataframe of dates to predict new cases.
-predict_dates <- data.frame(date = c("2020-07-14", "2020-07-15", "2020-07-16", "2020-07-17", "2020-07-18", "2020-07-19", "2020-07-20"))
-predict_dates <- predict_dates %>%
-  mutate(date = ymd(date))
-
-#Predicting new cases in Australia for the next week after our data ends using model_1
-predict(model_1, predict_dates)
-
-
-```
-Now lets predict new cases using model 2.
-```{r}
-#Predicting new cases in Australia for the next week after our data ends using model_2
-predict(model_2, predict_dates)
-```
-When examining the predicted values with the actual new case statistics from this website https://covidlive.com.au/archive we can see that both models under predict the values by quite a margin. This is likely due to the model being underfit. When examining the graph of the model with the data side by side we can see that the model does not follow the shape of the data very and is poor at predicting the training data. If the model was overfit the model would follow the shape of the data almost perfectly and therefore predict the training data perfectly. However with over fit data it would be unable to predict the test data well.
-The CV technique helped improve the underfitting problem of our data slightly however there was no significant change to the model performance allowing it to be deployed as an accurate predictor of new COVID cases in Australia.
-To improve the predictive ability of the model would be to apply feature selection and add more features to the model. This would provide more information for the model to base its prediction off rather than just the date and the new case numbers. Features such as cases in high population density / low population density areas could provide more information to the model as cases in high  population density areas would lead to higher case numbers through viral transmission.
+Countries with lower GDP per capita show consistently higher daily death rates compared with higher‑GDP countries, although this gap is less pronounced than the difference observed in daily infection rates. These patterns may reflect structural advantages in higher‑GDP countries, such as stronger healthcare systems, greater treatment capacity, and more effective public‑health infrastructure. Higher‑income countries also tend to have broader access to health education and preventive measures, which can reduce transmission and improve patient outcomes.
 
 
 ##References
