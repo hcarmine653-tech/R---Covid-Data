@@ -1,8 +1,9 @@
 ---
-title: "R-Covid_project"
+title: 'COVID‑19 Outcomes Across Economic Groups: A Cross‑Country Data Analysis'
 output:
-  pdf_document: default
   html_document: default
+  word_document: default
+  pdf_document: default
 date: "2025-06-24"
 ---
 
@@ -10,10 +11,8 @@ date: "2025-06-24"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-#Exploratory and Predictive Data Analysis Using R
 
-
-###Part 1: Data wrangling and integration
+### Part 1: Data wrangling and integration
 
 Loading relevant r packages:
 ```{r}
@@ -549,7 +548,7 @@ covid_data_clean <- negative_val_loop_outliers_removed
 
 Finally we have our cleaned and joined dataset ready for analysis.
 
-###Part 2: Data visualisation and analysis
+### Part 2: Data visualisation and analysis
 
 First we will create a plot to examine the trend of new cases in each country.
 
@@ -709,7 +708,7 @@ covid_data_clean <- covid_data_clean%>%
   mutate(
    daily_death_rate = (new_deaths / population) 
   )
-covid_data_clean
+head(covid_data_clean)
 ```
 Now that the data is prepared, we can visualise how infection rates differ across economic groups. The following plot illustrates the relationship between daily infected case rates and GDP status, allowing us to compare trends between higher‑ and lower‑GDP countries over time.
 
@@ -753,7 +752,7 @@ covid_data_clean %>%
 Countries with lower GDP per capita show consistently higher daily death rates compared with higher‑GDP countries, although this gap is less pronounced than the difference observed in daily infection rates. These patterns may reflect structural advantages in higher‑GDP countries, such as stronger healthcare systems, greater treatment capacity, and more effective public‑health infrastructure. Higher‑income countries also tend to have broader access to health education and preventive measures, which can reduce transmission and improve patient outcomes.
 
 
-##References
+## References
 [1]Group of Eight (Australian universities) (April 2020). A Roadmap to Recovery -- A Report for the Nation (PDF) (Report).
 [2]"Judicial Inquiry into Hotel Quarantine Program". www.premier.vic.gov.au. Victorian Government. 2 July 2020. Retrieved 28 January 2021.
 [3] "France to extend coronavirus emergency for two months". Al Jazeera. 2 May 2020. Archived from the original on 5 May 2020. Retrieved 4 May 2020.
